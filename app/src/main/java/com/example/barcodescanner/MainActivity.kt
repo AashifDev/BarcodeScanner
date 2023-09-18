@@ -18,6 +18,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
 import com.example.barcodescanner.databinding.ActivityMainBinding
 import com.google.android.gms.vision.CameraSource
 import com.google.android.gms.vision.Detector
@@ -30,166 +32,19 @@ import java.io.IOException
 
 
 class MainActivity : AppCompatActivity() {
-    private val requestCodeCameraPermission = 1001
-    private lateinit var cameraSource: CameraSource
-    private lateinit var barcodeDetector: BarcodeDetector
-    private var scannedValue = ""
     private lateinit var binding: ActivityMainBinding
+    lateinit var navController: NavController
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
-        val view = binding.root
-        setContentView(view)
+        setContentView(binding.root)
 
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.fragmentContainerView) as NavHostFragment
+        navController = navHostFragment.navController
 
-        if (ContextCompat.checkSelfPermission(
-                this@MainActivity, android.Manifest.permission.CAMERA
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            askForCameraPermission()
-        } else {
-            setupControls()
-        }
-
-        val aniSlide: Animation =
-            AnimationUtils.loadAnimation(this@MainActivity, R.anim.scanner_animation)
-        binding.barcodeLine.startAnimation(aniSlide)
     }
 
-    private fun setupControls() {
-        barcodeDetector =
-            BarcodeDetector.Builder(this).setBarcodeFormats(Barcode.ALL_FORMATS).build()
-
-        cameraSource = CameraSource.Builder(this, barcodeDetector)
-            .setRequestedPreviewSize(1920, 1080)
-            .setAutoFocusEnabled(true) //you should add this feature
-            .build()
-
-        binding.cameraSurfaceView.holder.addCallback(object : SurfaceHolder.Callback {
-            @SuppressLint("MissingPermission")
-            override fun surfaceCreated(holder: SurfaceHolder) {
-                try {
-                    //Start preview after 1s delay
-                    cameraSource.start(holder)
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-            }
-
-            @SuppressLint("MissingPermission")
-            override fun surfaceChanged(
-                holder: SurfaceHolder,
-                format: Int,
-                width: Int,
-                height: Int
-            ) {
-                try {
-                    cameraSource.start(holder)
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-            }
-
-            override fun surfaceDestroyed(holder: SurfaceHolder) {
-                cameraSource.stop()
-            }
-        })
-
-
-        barcodeDetector.setProcessor(object : Detector.Processor<Barcode> {
-            override fun release() {
-                Toast.makeText(applicationContext, "Scanner has been closed", Toast.LENGTH_SHORT)
-                    .show()
-            }
-
-            override fun receiveDetections(detections: Detector.Detections<Barcode>) {
-                val barcodes = detections.detectedItems
-                if (barcodes.size() == 1) {
-                    scannedValue = barcodes.valueAt(0).rawValue
-
-                    //Don't forget to add this line printing value or finishing activity must run on main thread
-                    runOnUiThread {
-                        cameraSource.stop()
-                        showDialog(scannedValue)
-                        //Toast.makeText(this@MainActivity, "value- $scannedValue", Toast.LENGTH_SHORT).show()
-
-                    }
-                }else
-                {
-                    Toast.makeText(this@MainActivity, "value- else", Toast.LENGTH_SHORT).show()
-
-                }
-            }
-        })
-    }
-
-    private fun showDialog(scannedValue: String) {
-        val dialog = Dialog(this@MainActivity)
-        dialog.setContentView(R.layout.dialog_layout)
-        val lp = WindowManager.LayoutParams()
-        lp.copyFrom(dialog.window?.attributes)
-
-        lp.width = WindowManager.LayoutParams.MATCH_PARENT
-        lp.height = WindowManager.LayoutParams.WRAP_CONTENT
-        lp.gravity = Gravity.CENTER
-        dialog.window?.attributes = lp
-
-        val txt:AppCompatTextView = dialog.findViewById(R.id.textViewCode)
-        val copy:AppCompatTextView = dialog.findViewById(R.id.textViewCopy)
-        val close:AppCompatTextView = dialog.findViewById(R.id.textViewClose)
-
-        txt.setText(scannedValue)
-        copy.setOnClickListener {
-            val clipboard: ClipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-            clipboard.text = txt.text
-            //Toast.makeText(this@MainActivity,txt.text.toString(), Toast.LENGTH_SHORT).show()
-            Toast.makeText(this@MainActivity,"Copied to clipboard", Toast.LENGTH_SHORT).show()
-            finish()
-        }
-
-        close.setOnClickListener {
-            finish()
-        }
-
-        dialog.show()
-        /*val adb: AlertDialog.Builder = AlertDialog.Builder(this)
-        val d: Dialog = adb.setView(View(this)).create()
-        // (That new View is just there to have something inside the dialog that can grow big enough to cover the whole screen.)
-
-        // (That new View is just there to have something inside the dialog that can grow big enough to cover the whole screen.)
-        val lp = WindowManager.LayoutParams()
-        lp.copyFrom(d.window!!.attributes)
-        lp.width = WindowManager.LayoutParams.MATCH_PARENT
-        lp.height = WindowManager.LayoutParams.MATCH_PARENT
-        d.show()
-        d.window!!.attributes = lp*/
-    }
-
-    private fun askForCameraPermission() {
-        ActivityCompat.requestPermissions(
-            this@MainActivity,
-            arrayOf(android.Manifest.permission.CAMERA),
-            requestCodeCameraPermission
-        )
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == requestCodeCameraPermission && grantResults.isNotEmpty()) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                setupControls()
-            } else {
-                Toast.makeText(applicationContext, "Permission Denied", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        cameraSource.stop()
+    override fun onSupportNavigateUp(): Boolean {
+        return navController.navigateUp() || super.onSupportNavigateUp()
     }
 }

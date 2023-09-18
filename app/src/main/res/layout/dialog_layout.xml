@@ -16,9 +16,23 @@
         android:layout_marginBottom="16dp"
         android:gravity="center_horizontal"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/textViewCopy"
+        app:layout_constraintBottom_toTopOf="@+id/editTextWriteText"
         app:layout_constraintStart_toStartOf="@+id/textViewCopy"
         app:layout_constraintEnd_toEndOf="@+id/textViewCopy"/>
+
+
+    <androidx.appcompat.widget.AppCompatEditText
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:id="@+id/editTextWriteText"
+        android:background="@null"
+        android:hint="Enter Text To Generate Qr"
+        android:layout_marginBottom="16dp"
+        android:imeOptions="actionDone"
+        android:singleLine="true"
+        app:layout_constraintBottom_toTopOf="@+id/textViewCopy"
+        app:layout_constraintStart_toStartOf="@id/textViewCode"
+        app:layout_constraintEnd_toEndOf="@id/textViewCode"/>
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/textViewCopy"
