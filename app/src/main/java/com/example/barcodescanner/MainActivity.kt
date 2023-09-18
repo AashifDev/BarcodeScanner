@@ -1,13 +1,21 @@
 package com.example.barcodescanner
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.app.Dialog
+import android.content.ClipboardManager
 import android.content.pm.PackageManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.Gravity
 import android.view.SurfaceHolder
+import android.view.View
+import android.view.Window
+import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.barcodescanner.databinding.ActivityMainBinding
@@ -15,7 +23,11 @@ import com.google.android.gms.vision.CameraSource
 import com.google.android.gms.vision.Detector
 import com.google.android.gms.vision.barcode.Barcode
 import com.google.android.gms.vision.barcode.BarcodeDetector
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.IOException
+
 
 class MainActivity : AppCompatActivity() {
     private val requestCodeCameraPermission = 1001
@@ -95,12 +107,12 @@ class MainActivity : AppCompatActivity() {
                 if (barcodes.size() == 1) {
                     scannedValue = barcodes.valueAt(0).rawValue
 
-
                     //Don't forget to add this line printing value or finishing activity must run on main thread
                     runOnUiThread {
                         cameraSource.stop()
-                        Toast.makeText(this@MainActivity, "value- $scannedValue", Toast.LENGTH_SHORT).show()
-                        finish()
+                        showDialog(scannedValue)
+                        //Toast.makeText(this@MainActivity, "value- $scannedValue", Toast.LENGTH_SHORT).show()
+
                     }
                 }else
                 {
@@ -109,6 +121,48 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    private fun showDialog(scannedValue: String) {
+        val dialog = Dialog(this@MainActivity)
+        dialog.setContentView(R.layout.dialog_layout)
+        val lp = WindowManager.LayoutParams()
+        lp.copyFrom(dialog.window?.attributes)
+
+        lp.width = WindowManager.LayoutParams.MATCH_PARENT
+        lp.height = WindowManager.LayoutParams.WRAP_CONTENT
+        lp.gravity = Gravity.CENTER
+        dialog.window?.attributes = lp
+
+        val txt:AppCompatTextView = dialog.findViewById(R.id.textViewCode)
+        val copy:AppCompatTextView = dialog.findViewById(R.id.textViewCopy)
+        val close:AppCompatTextView = dialog.findViewById(R.id.textViewClose)
+
+        txt.setText(scannedValue)
+        copy.setOnClickListener {
+            val clipboard: ClipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.text = txt.text
+            //Toast.makeText(this@MainActivity,txt.text.toString(), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@MainActivity,"Copied to clipboard", Toast.LENGTH_SHORT).show()
+            finish()
+        }
+
+        close.setOnClickListener {
+            finish()
+        }
+
+        dialog.show()
+        /*val adb: AlertDialog.Builder = AlertDialog.Builder(this)
+        val d: Dialog = adb.setView(View(this)).create()
+        // (That new View is just there to have something inside the dialog that can grow big enough to cover the whole screen.)
+
+        // (That new View is just there to have something inside the dialog that can grow big enough to cover the whole screen.)
+        val lp = WindowManager.LayoutParams()
+        lp.copyFrom(d.window!!.attributes)
+        lp.width = WindowManager.LayoutParams.MATCH_PARENT
+        lp.height = WindowManager.LayoutParams.MATCH_PARENT
+        d.show()
+        d.window!!.attributes = lp*/
     }
 
     private fun askForCameraPermission() {
